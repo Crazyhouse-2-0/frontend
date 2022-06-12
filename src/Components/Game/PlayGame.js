@@ -18,6 +18,8 @@ class PlayGame extends React.Component {
                 username: null,
                 color: null,
                 mymove: true,
+                wmoves: [],
+                bmoves: [],
             }
         }else{
             this.state = {
@@ -28,13 +30,35 @@ class PlayGame extends React.Component {
                 username: localStorage.getItem('username').replace(/^"(.+)"$/,'$1'),
                 color: null,
                 mymove: true,
+                wmoves: [],
+                bmoves: [],
             }
         } 
     }
+
     onDrop = async (source, target, piece, newPos, oldPos, orientation) => {
         if (source===target){
           return;
         }
+        
+        // see if the move is legal
+        var move = this.state.game.move({
+            from: source,
+            to: target,
+            promotion: 'q' // NOTE: always promote to a queen for example simplicity
+          })
+
+        // illegal move
+        // currently does not support insanehouse feature of being able ot move new pieces
+        // will have to code it myself -_-
+        if (source!=="spare") {
+            if (move === null) {
+                console.log("bruh");
+                return 'snapback'
+            }
+        }
+
+        // if move is legal, output information to console
         console.log('Source: ' + source)
         console.log('Target: ' + target)
         console.log('Piece: ' + piece)
@@ -43,39 +67,59 @@ class PlayGame extends React.Component {
         console.log('Orientation: ' + orientation)
         console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
         //console.log(fenToGrid(Chessboard.objToFen(newPos)));
+
+        // remove potential landing squares once move is completed
         this.removeGreySquares()
-    
-        // see if the move is legal
-        var move = this.state.game.move({
-          from: source,
-          to: target,
-          promotion: 'q' // NOTE: always promote to a queen for example simplicity
-        })
-    
-        // illegal move
-        // currently does not support insanehouse feature of being able ot move new pieces
-        // will have to code it myself -_-
-        if (source!="spare") {
-          if (move === null) {
-            console.log("bruh");
-            return 'snapback'
-          }
+        
+        // Flip board 
+        //this.state.board.flip()
+
+        // append new move to corresponding move array
+        if (this.state.color === "white"){
+            // let whitemoves = [];
+            // await axios.get(`http://localhost:4000/game/${window.location.href.split("/").at(-1)}`)
+            //     .then((Response) => {
+            //         Response.data.wmoves.forEach((move) => {
+            //             whitemoves.push(move)
+            //         })
+            //     })
+            // await whitemoves.push(source + "-" + target)
+            // await console.log(whitemoves)
+
+            await this.setState(prevState => ({
+                wmoves: [...prevState.wmoves, source+"-"+target]
+            }))
+            
+            axios.put(`http://localhost:4000/game/${window.location.href.split("/").at(-1)}`, {wmoves: this.state.wmoves, fen: Chessboard.objToFen(newPos)})
+                .then((Response) => {
+                    console.log(Response.data)
+                }
+            )
+        }else{
+
+            // let blackmoves = [];
+            // await axios.get(`http://localhost:4000/game/${window.location.href.split("/").at(-1)}`)
+            //     .then((Response) => {
+            //         Response.data.bmoves.forEach((move) => {
+            //             blackmoves.push(move)
+            //         })
+            //     })
+            // await blackmoves.push(source + "-" + target)
+            // await console.log(blackmoves)
+
+            await this.setState(prevState => ({
+                bmoves: [...prevState.bmoves, source+"-"+target]
+            }))
+            
+            axios.put(`http://localhost:4000/game/${window.location.href.split("/").at(-1)}`, {bmoves: this.state.bmoves, fen: Chessboard.objToFen(newPos)})
+                .then((Response) => {
+                    console.log(Response.data)
+                }
+            )
         }
-        this.state.board.flip()
-        let whitemoves = [];
-        await axios.get(`http://localhost:4000/game/${window.location.href.split("/").at(-1)}`)
-            .then((Response) => {
-                Response.data.wmoves.forEach((move) => {
-                    whitemoves.push(move)
-                })
-            })
-        await whitemoves.push(source + "-" + target)
-        await console.log(whitemoves)
-        axios.put(`http://localhost:4000/game/${window.location.href.split("/").at(-1)}`, {wmoves: whitemoves, fen: Chessboard.objToFen(newPos)})
-            .then((Response) => {
-                console.log(Response.data)
-            })
-    
+        this.setState({
+            mymove: false,
+        })
     }
     
     removeGreySquares = () => {
@@ -125,11 +169,12 @@ class PlayGame extends React.Component {
     }
 
     async componentDidMount() {
+        // if not logged in, then do noto load gameData
         if(!this.state.username){
             return
         }
-        let gameData;
-
+        
+        // initialize functions, gameId
         await this.setState({
             GameId: window.location.href.split("/").at(-1),
             config: {
@@ -146,10 +191,14 @@ class PlayGame extends React.Component {
                 sparePieces: true
             },
         })
+
+        //initialize game and board using config set above
         await this.setState({
             game: new Chess(),
             board: Chessboard('board', this.state.config)
         })
+        // get GameData, determine current user color and set mymove
+        let gameData;
 
         await axios.get(`http://localhost:4000/game/${this.state.GameId}`)
             .then((Response) => {
@@ -200,24 +249,76 @@ class PlayGame extends React.Component {
                         axios.put(`http://localhost:4000/game/${this.state.GameId}`, {white: this.state.username})
                     };
                 }
-            })
-            await $(window).on('resize', this.state.board.resize);
+                
+                this.newMoves = setInterval(
+                    () => this.getMovesAndUpdate(),
+                    2000
+                );
 
-        
+            });
+            // allow board to resize with window
+            await $(window).on('resize', this.state.board.resize);
         /*
         TODO
-        //actually this should be in the constructor
-        - check whether player is white or black by fetching game from db and checking username==white
-            - if both white and black have values that are not equal to current username, then that means game is full, return null page
-            - if neither player exists, randomize and flip board as necessary
-            - if white player exists and black is null : you are black, vice versa
         
         //implement setinterval and clearinterval to fetch data and update board
         //implement game end checker
         */
-      }
+    }
 
-      render() {
+    async componentWillUnmount(){
+        await clearInterval(this.newMoves);
+    }
+
+    getMovesAndUpdate = async () => {
+        await axios.get(`http://localhost:4000/game/${this.state.GameId}`)
+            .then((Response) => {
+                if(this.state.color === "white"){
+                    if(Response.data.bmoves.length!==this.state.bmoves.length){
+                        const newMove = Response.data.bmoves[Response.data.bmoves.length-1];
+                        this.setState(prevState => ({
+                            bmoves: [...prevState.bmoves, newMove]
+                        }))
+                        const movedPiece = this.state.board.position()[newMove.split("-").at(0)].charAt(1); 
+                        let gameMove = newMove.split("-").at(1)
+                        if (movedPiece!=="P"){
+                            gameMove = movedPiece + gameMove;
+                        }
+                        console.log(this.state.board.position()[newMove.split("-").at(0)].charAt(1));
+                        this.state.game.move(gameMove);
+                        this.state.board.position(this.state.game.fen())
+                        if (this.state.mymove===false){
+                            this.setState({
+                                mymove: true,
+                            })
+                        }
+                    }
+                }else{
+                    if(Response.data.wmoves.length!==this.state.wmoves.length){
+                        const newMove = Response.data.wmoves[Response.data.wmoves.length-1]
+                        this.setState(prevState => ({
+                            wmoves: [...prevState.wmoves, newMove]
+                        }))
+                        const movedPiece = this.state.board.position()[newMove.split("-").at(0)].charAt(1); 
+                        let gameMove = newMove.split("-").at(1)
+                        if (movedPiece!=="P"){
+                            gameMove = movedPiece + gameMove;
+                        }
+                        console.log(this.state.board.position()[newMove.split("-").at(0)].charAt(1));
+                        //need to convert newMove, which is in form of source-target, to standard algebraic notation
+                        this.state.game.move(gameMove);
+                        this.state.board.position(this.state.game.fen())
+                        if (this.state.mymove===false){
+                            this.setState({
+                                mymove: true,
+                            })
+                        }
+                    }
+                }
+            })
+    }
+
+    render() {
         if (!this.state.username) {
             return (
                 <div>
