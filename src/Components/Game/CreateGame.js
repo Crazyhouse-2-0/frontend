@@ -27,13 +27,16 @@ class CreateGame extends React.Component {
     }
 
     render() { 
-        
+        let currentURL = window.location.href;
+        let urlParams = currentURL.split("/");
+        urlParams.pop()
+        currentURL = urlParams.join("")
         return (  
             <div>
                 <h4>
                     Create a Game Room
                 </h4>
-                {this.state.url ? `Go to ${window.location.href}`+this.state.url : ""}
+                {this.state.url ? `Go to ${currentURL}/` + this.state.url : ""}
                 <button className='btn waves-effect waves-light' onClick={this.generateNewGame}>
                     Start a Game!
                 </button>
