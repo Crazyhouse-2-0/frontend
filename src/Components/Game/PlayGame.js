@@ -157,7 +157,7 @@ class PlayGame extends React.Component {
             return
         }
         
-        // initialize functions, gameId
+        // initialize chessboard js functions, gameId
         await this.setState({
             GameId: window.location.href.split("/").at(-1),
             config: {
@@ -187,55 +187,64 @@ class PlayGame extends React.Component {
             .then((Response) => {
                 gameData = Response.data
                 console.log(gameData)
-
+                
+                // if no players are set, then current user is first one to join this game
                 if(!gameData.white && !gameData.black){
-                    if (Math.random()<=0.5){
+                    if (Math.random()<=0.5){ // randomly generate color for first player
                         this.setState({
                             color: "white",
                         })
-                        console.log("ran")
                         axios.put(`http://localhost:4000/game/${this.state.GameId}`, {white: this.state.username})
                     }else{
                         this.setState({
                             color: "black",
                             mymove: false,
                         })
-                        console.log("aran")
                         axios.put(`http://localhost:4000/game/${this.state.GameId}`, {black: this.state.username})
                         this.state.board.flip()
                     }
-                }else if (gameData.white && gameData.black){
+                    console.log(`First player, you are playing ${this.state.color}`)
+                }
+                // both players are set, so game is already full
+                else if (gameData.white && gameData.black){
                     console.log("Game Full")
-                    if (this.state.username !== gameData.white && this.state.username !== gameData.black) {
+                    if (this.state.username !== gameData.white && this.state.username !== gameData.black) { // if this user is not any of the existing players
                         this.setState({
                             color: false,
                         })
                         document.getElementsByClassName('col').innerHTML = <div>This game is already full.</div>
                     }
-                }else if (gameData.white){
-                    if (this.state.username !== gameData.white) {
+                    // if the user is one of the existing players, no need to do anything
+                    // in future would ideally get fen and moves from db, and setState
+                }
+                // if white player exists
+                else if (gameData.white){
+                    if (this.state.username !== gameData.white) { //if current user is not the white player, set them to black
                         this.setState({
                             color: "black",
                             mymove: false,
                         })
-                        console.log("aran")
+                        console.log(`Second player, you are playing ${this.state.color}`)
                         axios.put(`http://localhost:4000/game/${this.state.GameId}`, {black: this.state.username})
                         this.state.board.flip()
                     }
-                }else{
-                    console.log("set to white")
+                }
+                // only other possible condition is black player is only player to exist
+                else{
+                    // same as above (mymove defaults as true in constructor)
                     if (this.state.username !== gameData.black) {
                         this.setState({
                             color: "white",
                         })
-                        console.log("ran")
+                        console.log(`Second player, you are playing ${this.state.color}`)
                         axios.put(`http://localhost:4000/game/${this.state.GameId}`, {white: this.state.username})
                     };
                 }
                 
+                // listen for any new moves made by opponent
                 this.newMoves = setInterval(
                     () => this.getMovesAndUpdate(),
-                    2000
+                    1000
                 );
 
             });
@@ -249,6 +258,7 @@ class PlayGame extends React.Component {
         */
     }
 
+    // clear interval as appropriate
     async componentWillUnmount(){
         await clearInterval(this.newMoves);
     }
@@ -281,9 +291,12 @@ class PlayGame extends React.Component {
                             bmoves: [...prevState.bmoves, newMove]
                         }))
 
-                        console.log(this.state.board.position()[newMove.split("-").at(0)].charAt(1));
+                        // sloppy allows for game.move to accept oldSquare-newSquare
                         this.state.game.move(newMove, {sloppy: true})
+
+                        //update current board position
                         this.state.board.position(this.state.game.fen())
+
                         if (this.state.mymove===false){
                             this.setState({
                                 mymove: true,
@@ -293,21 +306,17 @@ class PlayGame extends React.Component {
                 }else{
                     // Same as above
                     if(Response.data.wmoves.length!==this.state.wmoves.length){
+
                         const newMove = Response.data.wmoves[Response.data.wmoves.length-1]
+
                         this.setState(prevState => ({
                             wmoves: [...prevState.wmoves, newMove]
                         }))
-                        // manual conversion from old-new notation to algebraic that doesnt work with checks/captures
-                        // const movedPiece = this.state.board.position()[newMove.split("-").at(0)].charAt(1); 
-                        // let gameMove = newMove.split("-").at(1)
-                        // if (movedPiece!=="P"){
-                        //     gameMove = movedPiece + gameMove;
-                        // }
-                        // console.log(this.state.board.position()[newMove.split("-").at(0)].charAt(1));
-                        // //need to convert newMove, which is in form of source-target, to standard algebraic notation
-                        //this.state.game.move(gameMove);
+
                         this.state.game.move(newMove, {sloppy: true})
+
                         this.state.board.position(this.state.game.fen())
+
                         if (this.state.mymove===false){
                             this.setState({
                                 mymove: true,
