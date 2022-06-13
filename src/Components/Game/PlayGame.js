@@ -51,7 +51,7 @@ class PlayGame extends React.Component {
         // illegal move
         // currently does not support insanehouse feature of being able ot move new pieces
         // will have to code it myself -_-
-        if (source!=="spare") {
+        if (source!=="spare"){
             if (move === null) {
                 console.log("bruh");
                 return 'snapback'
@@ -76,16 +76,6 @@ class PlayGame extends React.Component {
 
         // append new move to corresponding move array
         if (this.state.color === "white"){
-            // let whitemoves = [];
-            // await axios.get(`http://localhost:4000/game/${window.location.href.split("/").at(-1)}`)
-            //     .then((Response) => {
-            //         Response.data.wmoves.forEach((move) => {
-            //             whitemoves.push(move)
-            //         })
-            //     })
-            // await whitemoves.push(source + "-" + target)
-            // await console.log(whitemoves)
-
             await this.setState(prevState => ({
                 wmoves: [...prevState.wmoves, source+"-"+target]
             }))
@@ -96,17 +86,6 @@ class PlayGame extends React.Component {
                 }
             )
         }else{
-
-            // let blackmoves = [];
-            // await axios.get(`http://localhost:4000/game/${window.location.href.split("/").at(-1)}`)
-            //     .then((Response) => {
-            //         Response.data.bmoves.forEach((move) => {
-            //             blackmoves.push(move)
-            //         })
-            //     })
-            // await blackmoves.push(source + "-" + target)
-            // await console.log(blackmoves)
-
             await this.setState(prevState => ({
                 bmoves: [...prevState.bmoves, source+"-"+target]
             }))
@@ -120,6 +99,10 @@ class PlayGame extends React.Component {
         this.setState({
             mymove: false,
         })
+    }
+
+    onSnapEnd = () => {
+        this.state.board.position(this.state.game.fen())
     }
     
     removeGreySquares = () => {
@@ -187,7 +170,7 @@ class PlayGame extends React.Component {
                 onDragStart: this.onDragStart,
                 onMouseoutSquare: this.onMouseoutSquare,
                 onMouseoverSquare: this.onMouseoverSquare,
-                //onSnapEnd: onSnapEnd,
+                onSnapEnd: this.onSnapEnd,
                 sparePieces: true
             },
         })
@@ -273,19 +256,41 @@ class PlayGame extends React.Component {
     getMovesAndUpdate = async () => {
         await axios.get(`http://localhost:4000/game/${this.state.GameId}`)
             .then((Response) => {
+
                 if(this.state.color === "white"){
+
+                    // if lengths are not matching, then new move was made
                     if(Response.data.bmoves.length!==this.state.bmoves.length){
-                        const newMove = Response.data.bmoves[Response.data.bmoves.length-1];
+                        const newMove = Response.data.bmoves[Response.data.bmoves.length-1]; // newest move is at end of array
+
+                        // TODO: implement if newMove.split("-").at(0) is "spare"
+                        /*
+                        - from mongoDB fen, determine which type of piece was added to the board (would be opposite color)
+                        - make that move on the board
+                        - this.state.game.load(fen)
+                            - determine new fen from mongoDB fen, current fen with more info like who to move, castling, en passant
+                            - change who to move
+                            - castling remains unchanged
+                            - set en passant value to "-" or null
+                            - set half-move counter to 0
+                            - increment full move number if black moved
+                        */
+
+                        // update local state
                         this.setState(prevState => ({
                             bmoves: [...prevState.bmoves, newMove]
                         }))
+
+                        // newMove is in the form oldSquare-newSquare, so the piece that moved is the piece on oldSquare
+                        // board.position() returns object that maps each square to the piece that is on it in the form "wK"
+                        // using charAt(1) returns the type of piece
                         const movedPiece = this.state.board.position()[newMove.split("-").at(0)].charAt(1); 
                         let gameMove = newMove.split("-").at(1)
                         if (movedPiece!=="P"){
                             gameMove = movedPiece + gameMove;
                         }
                         console.log(this.state.board.position()[newMove.split("-").at(0)].charAt(1));
-                        this.state.game.move(gameMove);
+                        this.state.game.move(newMove, {sloppy: true})
                         this.state.board.position(this.state.game.fen())
                         if (this.state.mymove===false){
                             this.setState({
@@ -294,19 +299,22 @@ class PlayGame extends React.Component {
                         }
                     }
                 }else{
+
                     if(Response.data.wmoves.length!==this.state.wmoves.length){
                         const newMove = Response.data.wmoves[Response.data.wmoves.length-1]
                         this.setState(prevState => ({
                             wmoves: [...prevState.wmoves, newMove]
                         }))
-                        const movedPiece = this.state.board.position()[newMove.split("-").at(0)].charAt(1); 
-                        let gameMove = newMove.split("-").at(1)
-                        if (movedPiece!=="P"){
-                            gameMove = movedPiece + gameMove;
-                        }
-                        console.log(this.state.board.position()[newMove.split("-").at(0)].charAt(1));
-                        //need to convert newMove, which is in form of source-target, to standard algebraic notation
-                        this.state.game.move(gameMove);
+                        // manual conversion from old-new notation to algebraic that doesnt work with checks/captures
+                        // const movedPiece = this.state.board.position()[newMove.split("-").at(0)].charAt(1); 
+                        // let gameMove = newMove.split("-").at(1)
+                        // if (movedPiece!=="P"){
+                        //     gameMove = movedPiece + gameMove;
+                        // }
+                        // console.log(this.state.board.position()[newMove.split("-").at(0)].charAt(1));
+                        // //need to convert newMove, which is in form of source-target, to standard algebraic notation
+                        //this.state.game.move(gameMove);
+                        this.state.game.move(newMove, {sloppy: true})
                         this.state.board.position(this.state.game.fen())
                         if (this.state.mymove===false){
                             this.setState({
