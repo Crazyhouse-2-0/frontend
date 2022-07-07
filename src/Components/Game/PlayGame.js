@@ -80,7 +80,7 @@ class PlayGame extends React.Component {
                 wmoves: [...prevState.wmoves, source+"-"+target]
             }))
             
-            axios.put(`http://localhost:4000/game/${window.location.href.split("/").at(-1)}`, {wmoves: this.state.wmoves, fen: Chessboard.objToFen(newPos)})
+            axios.put(`https://crazyhousebackend.herokuapp.com/game/${window.location.href.split("/").at(-1)}`, {wmoves: this.state.wmoves, fen: Chessboard.objToFen(newPos)})
                 .then((Response) => {
                     console.log(Response.data)
                 }
@@ -90,7 +90,7 @@ class PlayGame extends React.Component {
                 bmoves: [...prevState.bmoves, source+"-"+target]
             }))
             
-            axios.put(`http://localhost:4000/game/${window.location.href.split("/").at(-1)}`, {bmoves: this.state.bmoves, fen: Chessboard.objToFen(newPos)})
+            axios.put(`https://crazyhousebackend.herokuapp.com/game/${window.location.href.split("/").at(-1)}`, {bmoves: this.state.bmoves, fen: Chessboard.objToFen(newPos)})
                 .then((Response) => {
                     console.log(Response.data)
                 }
@@ -183,7 +183,7 @@ class PlayGame extends React.Component {
         // get GameData, determine current user color and set mymove
         let gameData;
 
-        await axios.get(`http://localhost:4000/game/${this.state.GameId}`)
+        await axios.get(`https://crazyhousebackend.herokuapp.com/game/${this.state.GameId}`)
             .then((Response) => {
                 gameData = Response.data
                 console.log(gameData)
@@ -194,13 +194,13 @@ class PlayGame extends React.Component {
                         this.setState({
                             color: "white",
                         })
-                        axios.put(`http://localhost:4000/game/${this.state.GameId}`, {white: this.state.username})
+                        axios.put(`https://crazyhousebackend.herokuapp.com/game/${this.state.GameId}`, {white: this.state.username})
                     }else{
                         this.setState({
                             color: "black",
                             mymove: false,
                         })
-                        axios.put(`http://localhost:4000/game/${this.state.GameId}`, {black: this.state.username})
+                        axios.put(`https://crazyhousebackend.herokuapp.com/game/${this.state.GameId}`, {black: this.state.username})
                         this.state.board.flip()
                     }
                     console.log(`First player, you are playing ${this.state.color}`)
@@ -225,7 +225,7 @@ class PlayGame extends React.Component {
                             mymove: false,
                         })
                         console.log(`Second player, you are playing ${this.state.color}`)
-                        axios.put(`http://localhost:4000/game/${this.state.GameId}`, {black: this.state.username})
+                        axios.put(`https://crazyhousebackend.herokuapp.com/game/${this.state.GameId}`, {black: this.state.username})
                         this.state.board.flip()
                     }
                 }
@@ -237,7 +237,7 @@ class PlayGame extends React.Component {
                             color: "white",
                         })
                         console.log(`Second player, you are playing ${this.state.color}`)
-                        axios.put(`http://localhost:4000/game/${this.state.GameId}`, {white: this.state.username})
+                        axios.put(`https://crazyhousebackend.herokuapp.com/game/${this.state.GameId}`, {white: this.state.username})
                     };
                 }
                 
@@ -258,7 +258,7 @@ class PlayGame extends React.Component {
     }
 
     getMovesAndUpdate = async () => {
-        await axios.get(`http://localhost:4000/game/${this.state.GameId}`)
+        await axios.get(`https://crazyhousebackend.herokuapp.com/game/${this.state.GameId}`)
             .then((Response) => {
 
                 if(this.state.color === "white"){

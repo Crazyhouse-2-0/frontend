@@ -19,7 +19,7 @@ class PlayerRegister extends Component {
             email: this.email.current.value,
         }
         try {
-            let res = await axios.post('http://localhost:4000/players', newPerson)
+            let res = await axios.post('https://crazyhousebackend.herokuapp.com/players', newPerson)
             console.log(res);
         }catch(err){
             console.log(err);

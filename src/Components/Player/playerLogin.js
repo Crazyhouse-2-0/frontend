@@ -17,8 +17,8 @@ class PlayerLogin extends Component {
             password: this.password.current.value,
         }
         try {
-            console.log(`http://localhost:4000/login/${loginAttempt.username}`)
-            let res = await axios.get(`http://localhost:4000/login/${loginAttempt.username}`)
+            console.log(`https://crazyhousebackend.herokuapp.com/login/${loginAttempt.username}`)
+            let res = await axios.get(`https://crazyhousebackend.herokuapp.com/login/${loginAttempt.username}`)
             console.log("hapepned")
             console.log(res)
             if (res.data.password === loginAttempt.password){

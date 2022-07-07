@@ -15,7 +15,7 @@ class CreateGame extends React.Component {
         }
 
         try {
-            let res = await axios.post('http://localhost:4000/games', newGame)
+            let res = await axios.post('https://crazyhousebackend.herokuapp.com/games', newGame)
             console.log(res);
             console.log(res.data._id);
             this.setState({

@@ -28,7 +28,7 @@ class App extends React.Component {
   
 
   componentDidMount() {
-    const url = 'http://localhost:4000/players';
+    const url = 'https://crazyhousebackend.herokuapp.com/players';
 
     axios.get(url)
       .then((Response) => {
@@ -51,7 +51,7 @@ class App extends React.Component {
   }
 
   updateList = () => {
-    const url = 'http://localhost:4000/players';
+    const url = 'https://crazyhousebackend.herokuapp.com/players';
     axios.get(url)
       .then((Response) => {
         this.setState({
