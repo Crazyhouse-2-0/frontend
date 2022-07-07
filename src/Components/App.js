@@ -1,5 +1,4 @@
 import React from 'react';
-import {BrowserRouter, Route, Switch} from 'react-router-dom';
 //import {Helmet} from 'react-helmet';
 import './App.css';
 import axios from 'axios';
@@ -93,7 +92,7 @@ class App extends React.Component {
   }
 
   render() {
-    const token = this.getToken();
+    //const token = this.getToken();
 
     let button;
     if (!this.state.token) {

@@ -250,12 +250,6 @@ class PlayGame extends React.Component {
             });
             // allow board to resize with window
             await $(window).on('resize', this.state.board.resize);
-        /*
-        TODO
-        
-        //implement setinterval and clearinterval to fetch data and update board
-        //implement game end checker
-        */
     }
 
     // clear interval as appropriate
@@ -274,6 +268,14 @@ class PlayGame extends React.Component {
                         const newMove = Response.data.bmoves[Response.data.bmoves.length-1]; // newest move is at end of array
 
                         // TODO: implement if newMove.split("-").at(0) is "spare"
+
+                        if (newMove.split("-").at(0) === "spare"){
+                            let newFen = Response.data.fen; //get fen data from db
+                            let fenArr = newFen.split(" "); // split fen by " " 
+                            this.state.board.position(fenArr[0]); // set new position on board
+                            this.state.game.load(fenArr[0]); // set new position on game
+                            //const boardPos = this.state.board.position();
+                        }
                         /*
                         - from mongoDB fen, determine which type of piece was added to the board (would be opposite color)
                         - make that move on the board
